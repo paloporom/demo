@@ -1,0 +1,92 @@
+buildscript {
+	ext {
+		springBootVersion = '1.5.6.RELEASE'
+		domaSpringBootStarterVersion = '1.1.1'
+		domaVersion = '2.16.1'
+		mysqlVersion = '6.0.6'
+		commonsLangVersion = '3.6'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+
+// JavaクラスとSQLファイルの出力先ディレクトリを同じにする
+processResources.destinationDir = compileJava.destinationDir
+// コンパイルより前にSQLファイルを出力先ディレクトリにコピーするために依存関係を逆転する
+compileJava.dependsOn processResources
+compileJava.options.compilerArgs = ['-Adoma.dao.subpackage=impl', '-Adoma.dao.suffix=Impl']
+configurations {
+    domaGenRuntime
+}
+
+repositories {
+	mavenCentral()
+}
+
+
+dependencies {
+	compile('org.springframework.boot:spring-boot-starter-actuator')
+	compile('org.springframework.boot:spring-boot-actuator-docs')
+	compile('org.springframework.boot:spring-boot-starter-aop')
+	compile('org.springframework.boot:spring-boot-starter-batch')
+	compile('org.springframework.boot:spring-boot-starter-cache')
+	//compile('org.springframework.boot:spring-boot-starter-data-elasticsearch')
+	compile('org.springframework.boot:spring-boot-starter-data-redis')
+	compile('org.flywaydb:flyway-core')
+	compile('org.springframework.boot:spring-boot-starter-mail')
+	compile('org.springframework.retry:spring-retry')
+	compile('org.springframework.boot:spring-boot-starter-security')
+	compile('org.springframework.session:spring-session')
+	compile('org.springframework.boot:spring-boot-starter-thymeleaf')
+	compile('org.springframework.boot:spring-boot-starter-validation')
+	compile('org.springframework.boot:spring-boot-starter-web')
+	compile('org.springframework.boot:spring-boot-starter-websocket')
+    // database
+    compile("org.seasar.doma.boot:doma-spring-boot-starter:${domaSpringBootStarterVersion}")
+    compile("mysql:mysql-connector-java:${mysqlVersion}")
+    compile("org.apache.commons:commons-lang3:${commonsLangVersion}")
+	runtime('org.springframework.boot:spring-boot-devtools')
+	runtime('mysql:mysql-connector-java')
+	domaGenRuntime("org.seasar.doma:doma-gen:${domaVersion}")
+	domaGenRuntime('mysql:mysql-connector-java')
+	compileOnly('org.projectlombok:lombok')
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+	testCompile('org.springframework.security:spring-security-test')
+}
+
+apply from:'eclipse.gradle'
+
+task gen << {
+	def entityPackage = 'com.example.demo.domain.entity'
+	def daoPackage = 'com.example.demo.domain.repository'
+    ant.taskdef(resource: 'domagentask.properties',
+        classpath: configurations.domaGenRuntime.asPath)
+    ant.gen(url: 'jdbc:mysql://127.0.0.1/test', user: 'root', password: 'pass') {
+        entityConfig(packageName: "${entityPackage}")
+        daoConfig(packageName: "${daoPackage}")
+        sqlConfig()
+    }
+}
+
+task genTestCases << {
+    ant.taskdef(resource: 'domagentask.properties',
+        classpath: configurations.domaGenRuntime.asPath)
+    ant.gen(url: 'jdbc:mysql://127.0.0.1/test', user: 'root', password: 'pass') {
+        sqlTestCaseConfig {
+            fileset(dir: 'src/main/resources') {
+                include(name: 'META-INF/**/*.sql')
+            }
+        }
+    }
+}

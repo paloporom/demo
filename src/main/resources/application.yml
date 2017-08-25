@@ -1,0 +1,36 @@
+# EMBEDDED SERVER CONFIGURATION (ServerProperties)
+server:
+  port: 9000
+
+spring:
+# THYMELEAF (ThymeleafAutoConfiguration)
+  thymeleaf:
+    enabled: true
+    cache: false
+    encoding: UTF-8
+# DATASOURCE (DataSourceAutoConfiguration & DataSourceProperties)
+  datasource:
+    driverClassName: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost/test?useLegacyDatetimeCode=false&serverTimezone=UTC
+    username: root
+    password: pass
+# INTERNATIONALIZATION (MessageSourceAutoConfiguration)
+  messages:
+    basename: i18n/messages
+    cache-seconds: 0
+    encoding: UTF-8
+  session:
+    store-type: redis
+# DOMA
+doma:
+  dialect: mysql
+  naming: snake-lower-case
+# ENDPOINTS (AbstractEndpoint subclasses)
+endpoints:
+  enabled: true
+flyway:
+  enabled: false
+security:
+  user:
+    name: root
+    password: pass
